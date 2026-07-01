@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recruiter · Microsoft Teams scheduler</title>
+  <!-- EmailJS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js">
+  </script>
+  <!-- Font Awesome (icons) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(145deg, #f6f9fc 0%, #e9f0f5 100%);
+      padding: 1.5rem;
+    }
+
+    .card {
+      max-width: 468px;
+      width: 100%;
+      background: #ffffff;
+      border-radius: 36px;
+      padding: 1.8rem 2rem 2rem;
+      box-shadow: 0 20px 40px -12px rgba(0, 20, 30, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .meet-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .meet-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .meet-logo img {
+      height: 38px;
+      width: auto;
+      display: block;
+    }
+
+    .meet-logo span {
+      font-weight: 600;
+      font-size: 1.1rem;
+      letter-spacing: -0.3px;
+      color: #1e2a3a;
+    }
+
+    .meet-logo span small {
+      font-weight: 400;
+      font-size: 0.75rem;
+      color: #5f6b7a;
+      margin-left: 4px;
+    }
+
+    .badge-recruiter {
+      background: #e8f0fe;
+      color: #1a5c9e;
+      padding: 0.25rem 0.9rem;
+      border-radius: 30px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+      margin-left: auto;
+      border: 1px solid #d2e3fc;
+    }
+
+    h2 {
+      font-weight: 600;
+      font-size: 1.5rem;
+      color: #0b1a2b;
+      letter-spacing: -0.4px;
+      margin-bottom: 0.15rem;
+    }
+
+    .subhead {
+      color: #3d4e62;
+      font-size: 0.9rem;
+      margin-bottom: 1.2rem;
+      border-left: 4px solid #6264a7;
+      padding-left: 0.9rem;
+      background: #f8fafc;
+      border-radius: 0 12px 12px 0;
+      line-height: 1.4;
+    }
+
+    .subhead i {
+      color: #6264a7;
+    }
+
+    /* ---------- custom calendar ---------- */
+    .calendar-wrapper {
+      background: #f8fafc;
+      border-radius: 20px;
+      padding: 1rem 1rem 0.7rem;
+      border: 1px solid #eef3f8;
+      margin-bottom: 1rem;
+      transition: box-shadow 0.2s;
+    }
+
+    .calendar-wrapper:focus-within {
+      box-shadow: 0 0 0 4px rgba(98, 100, 167, 0.12);
+      border-color: #6264a7;
+    }
+
+    .calendar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.6rem;
+    }
+
+    .calendar-header .month-year {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #0b1a2b;
+      letter-spacing: -0.2px;
+    }
+
+    .calendar-nav {
+      display: flex;
+      gap: 4px;
+    }
+
+    .calendar-nav button {
+      background: white;
+      border: 1px solid #dce5ed;
+      border-radius: 40px;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #1e2f40;
+      font-size: 0.8rem;
+      transition: 0.15s;
+    }
+
+    .calendar-nav button:hover {
+      background: #edebf5;
+      border-color: #6264a7;
+      color: #6264a7;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      text-align: center;
+    }
+
+    .calendar-grid .weekday {
+      font-size: 0.6rem;
+      font-weight: 600;
+      color: #5f6b7a;
+      letter-spacing: 0.3px;
+      padding: 0.15rem 0;
+    }
+
+    .calendar-grid .day-cell {
+      aspect-ratio: 1/1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 40px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #1e2f40;
+      cursor: pointer;
+      transition: 0.1s;
+      background: transparent;
+      border: none;
+      width: 100%;
+      padding: 0;
+    }
+
+    .calendar-grid .day-cell:hover:not(.empty):not(.disabled) {
+      background: #edebf5;
+      color: #6264a7;
+    }
+
+    .calendar-grid .day-cell.selected {
+      background: #6264a7;
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 4px 10px rgba(98, 100, 167, 0.3);
+    }
+
+    .calendar-grid .day-cell.empty {
+      pointer-events: none;
+    }
+
+    .calendar-grid .day-cell.disabled {
+      color: #c5d0db;
+      pointer-events: none;
+    }
+
+    .calendar-grid .day-cell.today {
+      border: 2px solid #6264a7;
+      color: #6264a7;
+      font-weight: 600;
+    }
+
+    .calendar-grid .day-cell.today.selected {
+      border-color: white;
+      color: white;
+    }
+
+    .selected-date-display {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: #1e2f40;
+      background: #eef4f9;
+      padding: 0.2rem 0.9rem;
+      border-radius: 40px;
+      display: inline-block;
+    }
+
+    .selected-date-display strong {
+      color: #6264a7;
+    }
+
+    /* ---------- modern time picker ---------- */
+    .time-picker-wrapper {
+      margin-bottom: 0.8rem;
+    }
+
+    .time-picker-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+      font-size: 0.8rem;
+      color: #1e2f40;
+      margin-bottom: 0.4rem;
+    }
+
+    .time-picker-label i {
+      color: #6264a7;
+      font-size: 0.85rem;
+    }
+
+    .time-options {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      background: #f8fafc;
+      padding: 0.5rem 0.6rem;
+      border-radius: 50px;
+      border: 1.5px solid #e2e8f0;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .time-options:focus-within {
+      border-color: #6264a7;
+      box-shadow: 0 0 0 4px rgba(98, 100, 167, 0.10);
+    }
+
+    .time-option {
+      flex: 1;
+      min-width: 60px;
+      padding: 0.4rem 0.1rem;
+      text-align: center;
+      background: transparent;
+      border: none;
+      border-radius: 40px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: #2c3e50;
+      cursor: pointer;
+      transition: 0.15s;
+      letter-spacing: 0.2px;
+    }
+
+    .time-option:hover {
+      background: #edebf5;
+      color: #6264a7;
+    }
+
+    .time-option.active {
+      background: #6264a7;
+      color: white;
+      box-shadow: 0 4px 10px rgba(98, 100, 167, 0.25);
+    }
+
+    .time-option.custom-time {
+      flex: 0 0 auto;
+      min-width: 80px;
+      background: white;
+      border: 1.5px solid #dce5ed;
+      padding: 0.3rem 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .time-option.custom-time:hover {
+      background: #f0f4f9;
+      border-color: #6264a7;
+    }
+
+    .time-option.custom-time input[type="time"] {
+      border: none;
+      background: transparent;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: #1e2f40;
+      outline: none;
+      width: 75px;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .time-option.custom-time input[type="time"]::-webkit-calendar-picker-indicator {
+      opacity: 0.5;
+      padding: 2px;
+    }
+
+    .time-option.custom-time input[type="time"]:focus {
+      color: #6264a7;
+    }
+
+    .time-option.custom-time.active {
+      background: #6264a7;
+      border-color: #6264a7;
+    }
+
+    .time-option.custom-time.active input[type="time"] {
+      color: white;
+    }
+
+    .time-option.custom-time.active input[type="time"]::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      opacity: 0.8;
+    }
+
+    /* optional note */
+    .meta-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 0.6rem 0 0.1rem;
+    }
+
+    .meta-tags span {
+      background: #f0f4f9;
+      padding: 0.1rem 0.8rem;
+      border-radius: 30px;
+      font-size: 0.7rem;
+      color: #2c3e50;
+    }
+
+    .meta-tags span i {
+      color: #6264a7;
+      margin-right: 4px;
+    }
+
+    /* action row */
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 0.8rem;
+      margin-top: 1.2rem;
+      padding-top: 1.2rem;
+      border-top: 2px dashed #dce5ed;
+    }
+
+    .btn {
+      background: #6264a7;
+      border: none;
+      padding: 0.65rem 2.2rem;
+      border-radius: 60px;
+      font-weight: 600;
+      color: white;
+      font-size: 0.9rem;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      transition: 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #4f5192;
+      box-shadow: 0 4px 8px rgba(98, 100, 167, 0.25);
+    }
+
+    .btn:hover {
+      background: #4f5192;
+      transform: scale(0.98);
+      box-shadow: 0 6px 12px rgba(98, 100, 167, 0.35);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      pointer-events: none;
+      filter: grayscale(0.4);
+    }
+
+    .message-banner {
+      background: #e6f7f0;
+      border-radius: 60px;
+      padding: 0.5rem 1.2rem;
+      margin-top: 0.8rem;
+      color: #00695c;
+      font-weight: 500;
+      font-size: 0.85rem;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      border-left: 6px solid #6264a7;
+    }
+
+    .message-banner.show {
+      display: flex;
+    }
+
+    .footnote {
+      display: none !important;
+    }
+
+    /* responsive */
+    @media (max-width: 500px) {
+      .card {
+        padding: 1.2rem 1.2rem 1.5rem;
+        border-radius: 24px;
+      }
+      .meet-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .badge-recruiter {
+        margin-left: 0;
+        text-align: center;
+      }
+      .action-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .action-row .btn {
+        justify-content: center;
+      }
+      .calendar-grid .day-cell {
+        font-size: 0.7rem;
+      }
+      .time-options {
+        padding: 0.4rem 0.5rem;
+        border-radius: 40px;
+        gap: 4px;
+      }
+      .time-option {
+        font-size: 0.7rem;
+        min-width: 50px;
+        padding: 0.35rem 0.1rem;
+      }
+      .time-option.custom-time {
+        min-width: 70px;
+      }
+      .time-option.custom-time input[type="time"] {
+        width: 60px;
+        font-size: 0.7rem;
+      }
+      .selected-date-display {
+        font-size: 0.7rem;
+        padding: 0.15rem 0.7rem;
+      }
+      .meet-logo img {
+        height: 32px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .time-options {
+        flex-wrap: wrap;
+        justify-content: center;
+        border-radius: 30px;
+        padding: 0.4rem;
+      }
+      .time-option {
+        flex: 0 0 auto;
+        min-width: 55px;
+      }
+      .time-option.custom-time {
+        flex: 0 0 auto;
+        min-width: 80px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="card" id="schedulerCard">
+
+  <!-- Microsoft Teams logo + recruiter badge -->
+  <div class="meet-header">
+    <div class="meet-logo">
+      <img src="https://3sx2y5mo5g.ucarecd.net/60e0b904-1ca8-47d4-b47b-586deebeabdb/avin39zfq.webp" alt="Microsoft Teams">
+    </div>
+    <div class="badge-recruiter">
+      <i class="fas fa-user-tie" style="margin-right: 6px;"></i> Recruiter
+    </div>
+  </div>
+
+  <h2>📅 Quick conversation</h2>
+  <div class="subhead">
+    <i class="fas fa-handshake" style="color:#6264a7; margin-right: 10px;"></i>
+    Pick a date & time – we'll confirm instantly.
+  </div>
+
+  <!-- Custom Calendar -->
+  <div class="calendar-wrapper" id="calendarWrapper">
+    <div class="calendar-header">
+      <span class="month-year" id="monthYearDisplay">July 2026</span>
+      <div class="calendar-nav">
+        <button id="prevMonthBtn"><i class="fas fa-chevron-left"></i></button>
+        <button id="nextMonthBtn"><i class="fas fa-chevron-right"></i></button>
+      </div>
+    </div>
+    <div class="calendar-grid" id="calendarGrid">
+      <!-- weekdays and days injected by JS -->
+    </div>
+    <div class="selected-date-display" id="selectedDateDisplay">
+      <i class="fas fa-calendar-check" style="color:#6264a7; margin-right:6px;"></i>
+      Selected: <strong id="selectedDateText">None</strong>
+    </div>
+  </div>
+
+  <!-- Modern Time Picker -->
+  <div class="time-picker-wrapper">
+    <div class="time-picker-label">
+      <i class="fas fa-clock"></i> Select time
+    </div>
+    <div class="time-options" id="timeOptions">
+      <button class="time-option" data-time="09:00">9:00</button>
+      <button class="time-option" data-time="10:00">10:00</button>
+      <button class="time-option" data-time="11:00">11:00</button>
+      <button class="time-option" data-time="12:00">12:00</button>
+      <button class="time-option" data-time="13:00">1:00</button>
+      <button class="time-option" data-time="14:00">2:00</button>
+      <button class="time-option" data-time="15:00">3:00</button>
+      <button class="time-option" data-time="16:00">4:00</button>
+      <button class="time-option custom-time" id="customTimeOption">
+        <i class="fas fa-pen" style="font-size:0.65rem; opacity:0.6;"></i>
+        <input type="time" id="customTimeInput" value="14:30">
+      </button>
+    </div>
+  </div>
+
+  <!-- meta tags -->
+  <div class="meta-tags">
+    <span><i class="fas fa-video"></i> Microsoft Teams link</span>
+    <span><i class="fas fa-clock"></i> 30 min slot</span>
+  </div>
+
+  <!-- Action row -->
+  <div class="action-row">
+    <button class="btn" id="scheduleBtn">
+      <i class="fas fa-paper-plane"></i> Send & schedule
+    </button>
+  </div>
+
+  <!-- message banner -->
+  <div id="messageBanner" class="message-banner">
+    <i class="fas fa-info-circle"></i>
+    <span id="bannerText">Your meeting request has been sent.</span>
+  </div>
+
+  <div class="footnote"></div>
+</div>
+
+<script>
+  (function() {
+    // ---------- EmailJS config ----------
+    const EMAILJS_PUBLIC_KEY = 'EHKPcgjBux1jmPamR';
+    const EMAILJS_SERVICE_ID = 'service_kvpr45j';
+    const EMAILJS_TEMPLATE_ID = 'template_v2xoave';
+    const RECRUITER_EMAIL = 'recruiter@company.com';
+
+    // DOM refs
+    const scheduleBtn = document.getElementById('scheduleBtn');
+    const banner = document.getElementById('messageBanner');
+    const bannerText = document.getElementById('bannerText');
+    const customTimeInput = document.getElementById('customTimeInput');
+
+    // Calendar state
+    let currentDate = new Date();
+    let selectedDate = null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Time state
+    let selectedTime = '14:30';
+
+    // DOM calendar elements
+    const monthYearDisplay = document.getElementById('monthYearDisplay');
+    const calendarGrid = document.getElementById('calendarGrid');
+    const selectedDateText = document.getElementById('selectedDateText');
+
+    // Time option buttons
+    const timeOptions = document.querySelectorAll('.time-option:not(.custom-time)');
+    const customTimeOption = document.getElementById('customTimeOption');
+
+    // ---------- helper: show banner ----------
+    function showBanner(message, isSuccess = true) {
+      banner.classList.add('show');
+      bannerText.textContent = message;
+      banner.style.background = isSuccess ? '#e6f7f0' : '#fee9e7';
+      banner.style.borderLeftColor = isSuccess ? '#6264a7' : '#c62828';
+      banner.style.color = isSuccess ? '#00695c' : '#b71c1c';
+      clearTimeout(window.bannerTimeout);
+      window.bannerTimeout = setTimeout(() => {
+        banner.classList.remove('show');
+      }, 7000);
+    }
+
+    // ---------- time picker logic ----------
+    function setActiveTime(timeStr) {
+      selectedTime = timeStr;
+      timeOptions.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.time === timeStr) {
+          btn.classList.add('active');
+        }
+      });
+      customTimeOption.classList.remove('active');
+      if (customTimeInput.value === timeStr) {
+        customTimeOption.classList.add('active');
+      }
+      customTimeInput.value = timeStr;
+    }
+
+    timeOptions.forEach(btn => {
+      btn.addEventListener('click', function() {
+        setActiveTime(this.dataset.time);
+      });
+    });
+
+    customTimeInput.addEventListener('input', function() {
+      if (this.value) {
+        setActiveTime(this.value);
+      }
+    });
+
+    customTimeInput.addEventListener('change', function() {
+      if (this.value) {
+        setActiveTime(this.value);
+      }
+    });
+
+    customTimeOption.addEventListener('click', function(e) {
+      if (e.target === this || e.target.tagName === 'I') {
+        customTimeInput.focus();
+        customTimeInput.showPicker?.();
+      }
+    });
+
+    // ---------- calendar render ----------
+    function renderCalendar() {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      monthYearDisplay.textContent = new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+      let html = '';
+      const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      weekdays.forEach(d => {
+        html += `<div class="weekday">${d}</div>`;
+      });
+
+      for (let i = 0; i < firstDay; i++) {
+        html += `<div class="day-cell empty"></div>`;
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const cellDate = new Date(year, month, d);
+        cellDate.setHours(0, 0, 0, 0);
+        const isToday = cellDate.getTime() === today.getTime();
+        const isSelected = selectedDate && cellDate.getTime() === selectedDate.getTime();
+        const isPast = cellDate < today;
+
+        let classes = 'day-cell';
+        if (isPast) classes += ' disabled';
+        if (isToday) classes += ' today';
+        if (isSelected) classes += ' selected';
+
+        html += `<button class="${classes}" data-date="${cellDate.toISOString()}">${d}</button>`;
+      }
+
+      calendarGrid.innerHTML = html;
+
+      if (selectedDate) {
+        const dateStr = selectedDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+        selectedDateText.textContent = dateStr;
+      } else {
+        selectedDateText.textContent = 'None';
+      }
+
+      document.querySelectorAll('.day-cell:not(.empty):not(.disabled)').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          const dateIso = this.dataset.date;
+          if (!dateIso) return;
+          const newDate = new Date(dateIso);
+          newDate.setHours(0, 0, 0, 0);
+          selectedDate = newDate;
+          renderCalendar();
+        });
+      });
+    }
+
+    // ---------- navigation ----------
+    document.getElementById('prevMonthBtn').addEventListener('click', () => {
+      currentDate.setMonth(currentDate.getMonth() - 1);
+      renderCalendar();
+    });
+    document.getElementById('nextMonthBtn').addEventListener('click', () => {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      renderCalendar();
+    });
+
+    // ---------- set default ----------
+    function setDefaultDate() {
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      selectedDate = new Date(tomorrow);
+      selectedDate.setHours(0, 0, 0, 0);
+      currentDate = new Date(tomorrow);
+      renderCalendar();
+      setActiveTime('14:30');
+    }
+
+    // ---------- send schedule ----------
+    function sendSchedule() {
+      if (!selectedDate) {
+        showBanner('📅 Please select a date from the calendar.', false);
+        return;
+      }
+
+      const timeVal = selectedTime;
+      if (!timeVal) {
+        showBanner('⏳ Please select a time.', false);
+        return;
+      }
+
+      const dateStr = selectedDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+      const timeDisplay = (() => {
+        const parts = timeVal.split(':');
+        const h = parseInt(parts[0]);
+        const m = parts[1];
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12 = h % 12 || 12;
+        return `${h12}:${m} ${ampm}`;
+      })();
+
+      scheduleBtn.disabled = true;
+      scheduleBtn.innerHTML = `<i class="fas fa-spinner fa-pulse"></i> Sending...`;
+
+      const applicantEmail = 'applicant@example.com';
+
+      const templateParams = {
+        to_email: RECRUITER_EMAIL,
+        from_email: applicantEmail,
+        applicant_email: applicantEmail,
+        meeting_date: dateStr,
+        meeting_time: timeDisplay,
+        meet_link: 'https://teams.microsoft.com/l/meetup-join',
+        recruiter_name: 'Recruiter',
+        applicant_name: 'Applicant',
+        message: `Meeting scheduled for ${dateStr} at ${timeDisplay} (Microsoft Teams)`
+      };
+
+      emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY)
+        .then((response) => {
+          console.log('SUCCESS!', response.status, response.text);
+          showBanner(`✅ Meeting scheduled! Confirmation sent to recruiter.`, true);
+          scheduleBtn.innerHTML = `<i class="fas fa-paper-plane"></i> Send & schedule`;
+          scheduleBtn.disabled = false;
+        })
+        .catch((err) => {
+          console.error('EmailJS error:', err);
+          showBanner(`❌ Failed to send: ${err.text || 'check console'}.`, false);
+          scheduleBtn.innerHTML = `<i class="fas fa-paper-plane"></i> Send & schedule`;
+          scheduleBtn.disabled = false;
+        });
+    }
+
+    // ---------- event listener ----------
+    scheduleBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      sendSchedule();
+    });
+
+    // init
+    setDefaultDate();
+
+    console.log('📬 Recruiter email:', RECRUITER_EMAIL);
+  })();
+</script>
+</body>
+</html>
